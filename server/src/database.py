@@ -1,0 +1,165 @@
+# Import libraries
+from os import truncate
+import sqlite3, datetime
+
+# Importing scripts
+
+# Classes
+class Database:
+    
+    def __init__(self, database, console):
+        
+        self.console = console
+        
+        seperator = "*" * 20
+        self.console.print(seperator)
+        
+        self.database = sqlite3.connect(database, check_same_thread=False)
+        self.console.print("Initializing database.")
+        self.console.print("Database successfully opened.")
+        
+        # Get cursor
+        self.cursor = self.database.cursor()
+        
+    def setup(self):
+        '''
+        Checks if required tables exists otherwise create them
+        '''
+        
+        # Check if required tables exist
+        self.console.print("Checking if required tables exists.")
+        self.cursor.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='users' ''')
+        
+        if self.cursor.fetchone()[0] == 1 :
+            self.console.print("User table exists.")
+        else: 
+            self.console.print("User table does not exists! Creating one now.")
+            
+            # Create the table
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS users
+            (NAME           TEXT    NOT NULL,
+            PASSWORD       TEXT    NOT NULL,
+            isAdmin        BOOLEAN  NOT NULL,
+            DATETIME         TEXT);''')
+            
+            self.console.print("User table created.")
+            
+        # Entry table
+        self.cursor.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='entry' ''')
+        
+        if self.cursor.fetchone()[0] == 1 :
+            self.console.print("Entry table exists.")
+        else: 
+            self.console.print("Entry table does not exists! Creating one now.")
+            
+            # Create the table
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS entry
+            (ID             INT NOT NULL,
+            OWNER           TEXT    NOT NULL,
+            TITLE       TEXT    NOT NULL,
+            BODY         TEXT NOT NULL,
+            DATETIME       TEXT     NOT NULL);''')
+            
+            self.console.print("Entry table created.")
+        
+        self.database.commit()
+        self.console.print("Done")
+        self.console.print("Changes commited.")
+        
+        seperator = "*" * 20
+        self.console.print(seperator)
+        
+        self.console.print("")
+        
+    def execute(self, command, values):
+        
+        try:
+            self.cursor.execute(command, values)
+            self.database.commit()
+        except Exception as error:
+            return error
+        
+        return True
+    
+    def check_if_exist(self, table, column, value):
+        '''
+        Check if table's rows's columns is the passed value
+        '''
+        rows = self.database.execute(f"SELECT * FROM {table}")
+        
+        for row in rows:
+            if row[column] == value:
+                return True
+            
+        return False
+    
+    def check_row_column(self, row, column, value):
+        '''
+        Check if the row's column is the value provided.
+        '''
+        
+        if row[column] == value:
+            return True
+            
+        return False
+    
+    def create_user(self, name, password ,isadmin):
+        '''
+        Creates a new user
+        '''
+        
+        # Check if user exists
+        if self.check_if_column_equal("users", "NAME", name):
+            return False
+        
+        command = f'''INSERT INTO users (NAME, PASSWORD, DATETIME, isAdmin) VALUES (?, ? , ?, ?);'''
+        self.console.print(command)
+        
+        # Get the datetime
+        dt = datetime.datetime.now()
+        
+        # This is going to remove the milliseconds
+        x = dt.replace(microsecond=0)
+        
+        self.cursor.execute(command, (name, password, x, isadmin)) # Execute
+        self.database.commit() # Commit changes
+        self.console.print(f"User {name} successfully created.")
+        
+        return True
+    
+    def get_user(self, table, username):
+        '''
+        Gets the user with the provided username
+        '''
+        
+        rows = self.database.execute(f"SELECT * FROM {table}")
+        
+        for row in rows:
+            if row[0] == username:
+                return row
+            
+        return None
+    
+    def destroyUser(self, name):
+        '''
+        Destroys the user with the provided name
+        '''
+        rows = self.database.execute(f"SELECT * FROM users")
+        
+        for i in rows:
+            print(i)
+        
+        try: 
+            self.cursor.execute("DELETE FROM users WHERE NAME=?", (name, ))
+            self.database.commit()
+        except Exception as e:
+            print(e)
+            return False
+        
+        return True
+    
+    def close(self):
+        '''
+        Closes the database
+        '''
+        self.database.close() # Close the database
