@@ -1,0 +1,5 @@
+- An amatuer attempt at an assistence program, suppose to have lots of features but only has a diary system for now.
+- It has a login page, with the user being created by the console(server)
+- Diary has AESCrypt.
+- Mainly proud of the complexity of the entire program. Console feels clean as well if you use the Microsoft Terminal progran. (just don't resize the window)
+- As of the reupload, the program is broken on my end. Fix is unscheduled due to this being a past hobby project.
